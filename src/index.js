@@ -1,11 +1,10 @@
 const adminRoute = require("./admin");
-const salePersonRoute = require("./salePerson");
 const { userRoute } = require("./user");
-const { levelRoute } = require("./levels");
-const { warrantyRoute } = require("./warranty");
-const { transactionRoute } = require("./transaction");
 const { enquiryRoute } = require("./enquiry");
-const paymentRoute = require("./payment");
-const pdfRoute = require("./pdf/pdf.route");
+const { truckRoute } = require("./trucks");
+const { tripRoute } = require("./trips");
+const { millRoute } = require("./mill");
+const { contentRoute } = require("./content");
+const { locationRoute } = require("./location");
 
-module.exports = { adminRoute, salePersonRoute, userRoute, levelRoute, warrantyRoute, transactionRoute, paymentRoute, enquiryRoute, pdfRoute }
+module.exports = { adminRoute, userRoute, enquiryRoute, truckRoute, tripRoute, locationRoute, millRoute, contentRoute } 

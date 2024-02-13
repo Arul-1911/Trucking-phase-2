@@ -1,53 +1,74 @@
 const express = require("express");
 const router = express.Router();
-const { auth, authRole } = require("../../middlewares/auth");
+const { auth, isAdmin } = require("../../middlewares/auth");
 const { upload } = require("../../utils/s3");
 
-const { postSingleImage, getStatistics, getSummary, getLeads, getNewUsers } = require("./adminController")
+// ------------------------------------ ADMIN --------------------------------
+const { adminLogin, updateAdminProfile, postSingleImage } = require("./adminController");
 
-const { createSalePerson, deleteSalePerson, getAllUser, getUser, updateUser, deleteUser } = require("../user");
-const { getAllWarranty, getWarranty, updateWarranty, deleteWarranty } = require("../warranty");
-const { getAllTransaction, getTransaction, deleteTransaction, updateTransaction, refundTransaction } = require("../transaction");
-const { deleteEnquiry, getEnquiry, getAllEnquiry, updateEnquiry } = require("../enquiry");
+router.post("/login", adminLogin);
+router.put("/update-profile", auth, isAdmin, updateAdminProfile);
 
+// ------------------------------------ USER ---------------------------------
+const { getAllUser, getUser, updateUser, deleteUser } = require("../user");
 
-router.post("/sale-person", auth, authRole('admin'), createSalePerson);
-router.delete("/sale-person/:id", auth, authRole('admin'), deleteSalePerson)
-
-router.get("/users", auth, authRole('admin'), getAllUser);
+router.get("/user", auth, isAdmin, getAllUser);
 router.route("/user/:id")
-  .get(auth, authRole('admin'), getUser)
-  .put(auth, authRole('admin'), updateUser)
-  .delete(auth, authRole('admin'), deleteUser);
+  .get(auth, isAdmin, getUser)
+  .put(auth, isAdmin, updateUser)
+  .delete(auth, isAdmin, deleteUser);
 
+// ------------------------------------ TRIP ---------------------------------
+const { getAllTrip, getTrip, deleteTrip } = require("../trips");
 
-router.get("/warranty", auth, authRole('admin'), getAllWarranty);
-router.route("/warranty/:id")
-  .get(auth, authRole("admin"), getWarranty)
-  .put(auth, authRole(['admin', 'sale-person']), updateWarranty)
-  .delete(auth, authRole('admin'), deleteWarranty);
+router.get("/trip", auth, isAdmin, getAllTrip);
+router.route("/trip/:id")
+  .get(auth, isAdmin, getTrip)
+  .delete(auth, isAdmin, deleteTrip);
 
-router.get("/transactions", auth, authRole('admin'), getAllTransaction);
-router.route("/transaction/:id")
-  .get(auth, authRole("admin"), getTransaction)
-  .put(auth, authRole('admin'), updateTransaction)
-  .delete(auth, authRole('admin'), deleteTransaction);
-// router.post("/transaction/:id/refund", auth, authRole("admin"), refundTransaction);
+// ------------------------------------ MESSAGE ---------------------------------
+const { getAllEnquiry, getEnquiry, deleteEnquiry } = require("../enquiry");
 
-
-
-router.get("/enquiry", auth, authRole('admin'), getAllEnquiry);
+router.get("/enquiry", auth, isAdmin, getAllEnquiry);
 router.route("/enquiry/:id")
-  .get(auth, authRole("admin"), getEnquiry)
-  .put(auth, authRole('admin'), updateEnquiry)
-  .delete(auth, authRole('admin'), deleteEnquiry);
+  .get(auth, isAdmin, getEnquiry)
+  .delete(auth, isAdmin, deleteEnquiry);
 
-router.post("/image", auth, authRole('admin'), upload.single('image'), postSingleImage);
-router.post("/upload-doc", auth, authRole('admin'), upload.single('doc'), postSingleImage);
+router.post("/image", auth, isAdmin, upload.single('image'), postSingleImage);
 
-router.get("/leads", auth, authRole('admin'), getLeads);
-router.get("/new-users",auth, authRole('admin'), getNewUsers);
-router.get("/summary", auth, authRole('admin'), getSummary);
-router.get('/statistics/:time', auth, authRole('admin'), getStatistics);
+// ------------------------------------ TRUCK ---------------------------------
+const { createTruck, getAllTruck, getTruck, updateTruck, deleteTruck } = require("../trucks");
+
+router.post("/truck", auth, isAdmin, createTruck);
+router.get("/truck", auth, isAdmin, getAllTruck);
+router.route("/truck/:id")
+  .get(auth, isAdmin, getTruck)
+  .put(auth, isAdmin, updateTruck)
+  .delete(auth, isAdmin, deleteTruck);
+
+// ------------------------------------ Mill ---------------------------------
+const { createMill, getAllMill, getMill, updateMill, deleteMill } = require("../mill");
+
+router.post("/mill", auth, isAdmin, createMill);
+router.get("/mill", auth, isAdmin, getAllMill);
+router.route("/mill/:id")
+  .get(auth, isAdmin, getMill)
+  .put(auth, isAdmin, updateMill)
+  .delete(auth, isAdmin, deleteMill);
+
+// ------------------------------------ LOCATION ---------------------------------
+const { updateLocation, deleteLocation } = require("../location");
+
+router.route("/location/:id")
+  .put(auth, isAdmin, updateLocation)
+  .delete(auth, isAdmin, deleteLocation);
+
+// ------------------------------------ CONTENT ---------------------------------
+const { createContent, getContent, updateContent } = require("../content");
+
+router.route("/content")
+  .post(auth, isAdmin, createContent)
+  .get(auth, isAdmin, getContent)
+  .put(auth, isAdmin, updateContent);
 
 module.exports = router;

@@ -15,7 +15,7 @@ exports.createEnquiry = catchAsyncError(async (req, res, next) => {
     req.body.image = location;
   }
 
-  const enquiry = await enquiryModel.create({...req.body, user: userId});
+  const enquiry = await enquiryModel.create({ ...req.body, user: userId });
   res.status(201).json({ enquiry });
 });
 
@@ -23,48 +23,79 @@ exports.createEnquiry = catchAsyncError(async (req, res, next) => {
 exports.getAllEnquiry = catchAsyncError(async (req, res, next) => {
   console.log("all enquiry", req.query);
 
-  const apiFeature = new APIFeatures(
-    enquiryModel.find().sort({ createdAt: -1 }),
-    req.query
-  ).search("email");
+  console.log("getAllTrip", req.query);
 
-  let enquiries = await apiFeature.query;
-  console.log("enquiries", enquiries);
-  let enquiryCount = enquiries.length;
-  if (req.query.resultPerPage && req.query.currentPage) {
-    apiFeature.pagination();
+  const { keyword, currentPage, resultPerPage } = req.query;
+  let match = [];
+  if (keyword) {
+    const regexQry = {
+      $regex: keyword,
+      $options: "i",
+    };
 
-    console.log("enquiryCount", enquiryCount);
-    enquiries = await apiFeature.query.clone();
+    match = [{
+      $match: {
+        $or: [
+          { message: regexQry },
+          { ["user.firstname"]: regexQry },
+          { ["user.lastname"]: regexQry },
+        ]
+      }
+    }];
   }
-  console.log("enquiries", enquiries);
-  res.status(200).json({ enquiries, enquiryCount });
+
+  const limit = parseInt(resultPerPage);
+  const c = parseInt(currentPage);
+  const skip = limit * (c - 1);
+
+  let [{ results, count: [count] }] = await enquiryModel.aggregate([
+    {
+      $lookup: {
+        foreignField: "_id",
+        localField: "user",
+        from: "users",
+        as: "user"
+      }
+    },
+    { $unwind: { path: "$user", preserveNullAndEmptyArrays: true } },
+    ...match,
+    { $sort: { "createdAt": -1 } },
+    {
+      $facet: {
+        results: [{ $skip: skip }, { $limit: limit }],
+        count: [{ $count: "messageCount" }]
+      }
+    }
+  ]);
+
+  if (!count) count = { messageCount: 0 };
+  res.status(200).json({ messages: results, ...count });
 });
 
 // Get a single document by ID
 exports.getEnquiry = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
 
-  const enquiry = await enquiryModel.findById(id);
-  if (!enquiry) {
-    return next(new ErrorHandler("Enquiry not found.", 404));
+  const message = await enquiryModel.findById(id).populate("user", ["firstname", "lastname", "mobile_no"]);
+  if (!message) {
+    return next(new ErrorHandler("Message not found.", 404));
   }
 
-  res.status(200).json({ enquiry });
+  res.status(200).json({ message });
 });
 
 // Update a document by ID
 exports.updateEnquiry = catchAsyncError(async (req, res, next) => {
   const { id } = req.params;
-  const enquiry = await enquiryModel.findByIdAndUpdate(id, req.body, {
+  const message = await enquiryModel.findByIdAndUpdate(id, req.body, {
     new: true,
     runValidators: true,
     useFindAndModify: false,
   });
 
-  if (!enquiry) return next(new ErrorHandler('Enquiry not found', 404));
+  if (!message) return next(new ErrorHandler('Message not found', 404));
 
-  res.status(200).json({ enquiry });
+  res.status(200).json({ message });
 });
 
 // Delete a document by ID
@@ -73,11 +104,11 @@ exports.deleteEnquiry = catchAsyncError(async (req, res, next) => {
   let enquiry = await enquiryModel.findById(id);
 
   if (!enquiry)
-    return next(new ErrorHandler("Enquiry not found", 404));
+    return next(new ErrorHandler("Message not found", 404));
 
   await enquiry.deleteOne();
 
   res.status(200).json({
-    message: "Enquiry Deleted successfully.",
+    message: "Message Deleted successfully.",
   });
 });
