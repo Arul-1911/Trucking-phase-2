@@ -30,7 +30,7 @@ const tripSchema = new mongoose.Schema({
 	},
 	unload_loc: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: "Location"
+		ref: "Mill"
 	},
 	end_loc: {
 		type: mongoose.Schema.Types.ObjectId,
@@ -46,6 +46,8 @@ const tripSchema = new mongoose.Schema({
 		type: Number,
 		required: [true, "Start Milage is Required."],
 	},
+	load_milage: { type: Number },
+	unload_milage: { type: Number },
 	end_milage: { type: Number },
 	dispatch: {
 		type: String,
@@ -68,6 +70,9 @@ const tripSchema = new mongoose.Schema({
 	docs: [{ type: String }],
 	slip_id: { type: String },
 	block_no: { type: String },
+
+	unload_depart_time: { type: Date },
+	warehouse_arr_time: { type: Date },
 
 	end_time: { type: Date },
 }, { timestamps: true });
