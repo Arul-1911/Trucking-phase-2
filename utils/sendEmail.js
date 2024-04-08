@@ -30,7 +30,7 @@ const sendEmail = async (options) => {
     to: options.email,
     subject: options.subject,
     html: options.message,
-    // attachments: options.files
+    // attachments: [{content: file, filename: 'doc.pdf'}]
   });
 
   console.log({ id });

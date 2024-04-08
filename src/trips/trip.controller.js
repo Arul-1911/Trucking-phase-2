@@ -1,13 +1,12 @@
 const ErrorHandler = require("../../utils/errorHandler");
 const catchAsyncError = require("../../utils/catchAsyncError");
 const APIFeatures = require("../../utils/apiFeatures");
-const { tripModel, subTripModel } = require("./trip.model");
-const locationModel = require("../location/location.model")
+const { tripModel, locRecordModel } = require("./trip.model");
 const { userModel } = require("../user/user.model");
 const { isValidObjectId, default: mongoose } = require("mongoose");
-const { v4: uuid } = require("uuid");
 const truckModel = require("../trucks/truck.model");
 const { s3UploadMulti } = require("../../utils/s3");
+const millModel = require("../mill/mill.model");
 
 const populateTrip = [
   { path: "source_loc", select: "name lat long" },
@@ -24,6 +23,12 @@ const populateTrip = [
 // Create a new document
 exports.createTrip = catchAsyncError(async (req, res, next) => {
   console.log("createTrip", req.body);
+  const { loc } = req.body;
+  if (!loc) {
+    return next(new ErrorHandler("Current Location is required", 400));
+  };
+  loc.time = Date.now();
+
   const userId = req.userId;
   const user = await userModel.findById(userId).select("+hasTrip");
   if (!user) {
@@ -54,6 +59,9 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
 
     user.hasTrip = true;
     await user.save();
+
+    // creating location
+    await locRecordModel.create({ trip: trip._id, source_loc: loc });
   }
   res.status(201).json({ trip });
 });
@@ -61,21 +69,13 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
 // Get Current Trip or Trip by _id of Driver
 exports.getDriverTrip = catchAsyncError(async (req, res, next) => {
   const userId = req.userId;
-  const { id } = req.params;
 
   const driver = await userModel.findById(userId).select("+hasTrip");
   if (!driver.hasTrip) {
     return next(new ErrorHandler("No On-going trip", 400));
   }
 
-  let query = { "driver.dId": userId };
-  if (id) {
-    query = { ...query, _id: id }
-  } else {
-    query = { ...query, status: "on-going" }
-  }
-
-  const trip = await tripModel.findOne(query).populate(populateTrip);
+  const trip = await tripModel.findOne({ "driver.dId": userId, status: "on-going" }).populate(populateTrip);
   if (!trip) {
     return next(new ErrorHandler("No On-going trip", 400));
   }
@@ -83,11 +83,27 @@ exports.getDriverTrip = catchAsyncError(async (req, res, next) => {
   res.status(200).json({ trip, end_time: trip.end_time });
 });
 
+exports.getTripHisDetail = catchAsyncError(async (req, res, next) => {
+  const userId = req.userId;
+  const { id } = req.params;
+
+  const trip = await tripModel.findOne({ "driver.dId": userId, _id: id }).populate(populateTrip);
+  if (!trip) {
+    return next(new ErrorHandler("No On-going trip", 400));
+  }
+
+  res.status(200).json({ trip });
+});
+
 // Shift Change 
 exports.shiftChange = catchAsyncError(async (req, res, next) => {
   console.log("shiftChange", req.body);
   const userId = req.userId;
-  const { trip_id } = req.body;
+  const { trip_id, loc } = req.body;
+  if (!loc) {
+    return next(new ErrorHandler("Current Location is required", 400));
+  };
+  loc.time = Date.now();
   // const { trip_id, userId } = req.body;
 
   console.log({ trip_id, userId });
@@ -125,6 +141,11 @@ exports.shiftChange = catchAsyncError(async (req, res, next) => {
       session
     }).populate(populateTrip);
 
+    await locRecordModel.findOneAndUpdate(
+      { trip: trip._id },
+      { $push: { shift_change: loc } },
+      { session }
+    );
     user.hasTrip = true;
     await user.save({ session });
 
@@ -132,7 +153,7 @@ exports.shiftChange = catchAsyncError(async (req, res, next) => {
     await prevDriver.save({ session });
 
     await session.commitTransaction();
-    res.status(200).json({ trip });
+    res.status(200).json({ trip, previousDriver: prevDriverId });
 
   } catch (err) {
     await session.abortTransaction();
@@ -153,20 +174,31 @@ const getMissingFields = (reqFields, body) => {
 };
 
 exports.updateTrip = catchAsyncError(async (req, res, next) => {
+  console.log("updateTrip", req.body, req.query);
+  const { loc } = req.body;
+  if (!loc) {
+    return next(new ErrorHandler("Current Location is required", 400));
+  };
+  loc.time = Date.now();
+
   const { id } = req.params;
   let updatedData = {};
+  let record = { time: Date.now() };
   let missingFields = null;
   switch (req.query.UPDATE_TRIP) {
     case "ARRIVAL_TIME":
       updatedData.load_loc_arr_time = Date.now();
+      record = { load_loc_arr: loc };
       break;
 
     case "LOAD_TIME_START":
       updatedData.load_time_start = Date.now();
+      record = { load_start: loc };
       break;
 
     case "LOAD_TIME_END":
       updatedData.load_time_end = Date.now();
+      record = { load_end: loc };
       break;
 
     case "UNLOAD_TRIP":
@@ -193,18 +225,23 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
         let location = results.map((result) => result.Location);
         updatedData.docs = location;
       }
+      updatedData.second_trip_start_time = Date.now();
+      record = { second_trip: loc };
       break;
 
     case "UNLOAD_ARRIVAL_TIME":
       updatedData.unload_loc_arr_time = Date.now();
+      record = { unload_loc_arr: loc };
       break;
 
     case "UNLOAD_TIME_START":
       updatedData.unload_time_start = Date.now();
+      record = { unload_start: loc };
       break;
 
     case "UNLOAD_TIME_END":
       updatedData.unload_time_end = Date.now();
+      record = { unload_end: loc };
       break;
 
     case "PRODUCT_DETAILS":
@@ -221,6 +258,7 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
       }
       const { unload_milage, gross_wt, tare_wt, net_wt } = req.body;
       updatedData = { unload_milage, gross_wt, tare_wt, net_wt };
+      record = { product: loc };
       break;
 
     case "CONT_WAREHOUSE":
@@ -228,18 +266,22 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
 
       updatedData.unload_depart_time = Date.now();
       updatedData.end_loc = "65ae4c081c0736fbf1828ccf";
+      record = { unload_depart: loc };
       break;
 
     case "ARRIVE_WAREHOUSE":
       updatedData.warehouse_arr_time = Date.now();
+      record = { warehouse_arr: loc };
       break;
 
     default:
       const { end_milage } = req.body;
       if (!end_milage) {
         const tripUnloadLoc = await tripModel.findById(id);
+        const mill = await millModel.findById(tripUnloadLoc.unload_loc);
 
-        updatedData.end_loc = tripUnloadLoc.unload_loc;
+        console.log({ tripUnloadLoc, mill });
+        updatedData.end_loc = mill.address;
         updatedData.end_milage = tripUnloadLoc.unload_milage;
       } else {
         updatedData.end_milage = end_milage;
@@ -247,6 +289,7 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
 
       updatedData.end_time = Date.now();
       updatedData.status = 'completed';
+      record = { end_loc: loc };
       break;
   }
 
@@ -259,6 +302,8 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
   if (!trip) {
     return next(new ErrorHandler("Trip not found.", 404));
   }
+
+  await locRecordModel.findOneAndUpdate({ trip: trip._id }, record);
 
   if (!req.query.UPDATE_TRIP) {
     await truckModel.findByIdAndUpdate(trip.truck, { is_avail: true });

@@ -4,19 +4,23 @@ const { auth, isAdmin } = require("../../middlewares/auth");
 const { upload } = require("../../utils/s3");
 
 // ------------------------------------ ADMIN --------------------------------
-const { adminLogin, updateAdminProfile, postSingleImage } = require("./adminController");
+const { adminLogin, updateAdminProfile, postSingleImage, calcCharge } = require("./adminController");
 
 router.post("/login", adminLogin);
 router.put("/update-profile", auth, isAdmin, updateAdminProfile);
+router.post("/calc-charge", auth, isAdmin, calcCharge);
 
 // ------------------------------------ USER ---------------------------------
-const { getAllUser, getUser, updateUser, deleteUser } = require("../user");
+const { getAllUser, getUser, updateUser, deleteUser, getAllLogs, getAllDriverLogs } = require("../user");
 
 router.get("/user", auth, isAdmin, getAllUser);
 router.route("/user/:id")
   .get(auth, isAdmin, getUser)
   .put(auth, isAdmin, updateUser)
   .delete(auth, isAdmin, deleteUser);
+
+router.get('/logs/:date', auth, isAdmin, getAllLogs);
+router.get('/driver-log/:id', auth, isAdmin, getAllDriverLogs);
 
 // ------------------------------------ TRIP ---------------------------------
 const { getAllTrip, getTrip, deleteTrip } = require("../trips");
