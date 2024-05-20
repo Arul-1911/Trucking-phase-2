@@ -32,6 +32,7 @@ app.use("/api/content", contentRoute);
 app.use("/api/notification", notificationRoute);
 
 app.all("*", async (req, res) => {
+  console.log(process.env.TWILIO_ACCOUNT_SID)
   res
     .status(404)
     .json({
