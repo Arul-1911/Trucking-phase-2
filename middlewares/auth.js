@@ -12,9 +12,9 @@ exports.auth = async (req, res, next) => {
         },
       });
     }
-
+   
     const { userId } = jwt.verify(
-      req.headers.authorization,
+      req.headers.authorization.replaceAll("Bearer ",""),
       process.env.JWT_SECRET
     );
     console.log({ userId });
