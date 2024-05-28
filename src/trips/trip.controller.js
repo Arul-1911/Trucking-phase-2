@@ -235,7 +235,7 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
         unload_loc: "Mill ID",
         prod_detail: "Product Details",
         slip_id: "Slip ID",
-        block_no: "Block Number",
+        // block_no: "Block Number",
         load_milage: "Current Milage",
       };
       missingFields = getMissingFields(reqFields, req.body);
