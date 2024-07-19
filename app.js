@@ -19,7 +19,18 @@ app.use(
 
 app.get("/", (req, res, next) => res.json({ message: "Server is running" }));
 
-const { adminRoute, userRoute, enquiryRoute, locationRoute, truckRoute, tripRoute, millRoute, contentRoute, notificationRoute } = require("./src");
+const {
+  adminRoute,
+  userRoute,
+  enquiryRoute,
+  locationRoute,
+  truckRoute,
+  tripRoute,
+  millRoute,
+  contentRoute,
+  notificationRoute,
+  queryRoute,
+} = require("./src");
 
 app.use("/api/admin", adminRoute);
 app.use("/api/user", userRoute);
@@ -30,19 +41,17 @@ app.use("/api/trip", tripRoute);
 app.use("/api/mill", millRoute);
 app.use("/api/content", contentRoute);
 app.use("/api/notification", notificationRoute);
+app.use("/api/query", queryRoute);
 
 app.all("*", async (req, res) => {
-  console.log(process.env.TWILIO_ACCOUNT_SID)
-  res
-    .status(404)
-    .json({
-      error: {
-        message: "Not Found. Kindly Check the API path as well as request type",
-      },
-    });
+  console.log(process.env.TWILIO_ACCOUNT_SID);
+  res.status(404).json({
+    error: {
+      message: "Not Found. Kindly Check the API path as well as request type",
+    },
+  });
 });
 
 app.use(errorMiddleware);
 
 module.exports = app;
-

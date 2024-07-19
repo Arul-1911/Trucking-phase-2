@@ -7,5 +7,7 @@ const { millRoute } = require("./mill");
 const { contentRoute } = require("./content");
 const { locationRoute } = require("./location");
 const { notificationRoute } = require("./notification");
+const { queryRoute } = require("./Query");
 
-module.exports = { adminRoute, userRoute, enquiryRoute, truckRoute, tripRoute, locationRoute, millRoute, contentRoute, notificationRoute } 
+
+module.exports = { adminRoute, userRoute, enquiryRoute, truckRoute, tripRoute, locationRoute, millRoute, contentRoute, notificationRoute,queryRoute } 
