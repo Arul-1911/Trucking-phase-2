@@ -9,7 +9,7 @@ exports.auth = async (req, res, next) => {
       return res.status(401).send({
         error: {
           message: `Unauthorized. Please Send token in request header`,
-        },
+        }, 
       });
     }
 
