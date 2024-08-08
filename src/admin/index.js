@@ -111,7 +111,7 @@ const { createContent, getContent, updateContent } = require("../content");
 
 router
   .route("/content")
-  .post(auth, isAdmin, createContent)
+  .post( createContent)
   .get( getContent)
   .put(auth, isAdmin, updateContent);
 
