@@ -15,12 +15,12 @@ exports.createMill = catchAsyncError(async (req, res, next) => {
   const newLoaction = await locationModel.create({ name, lat, long });
   const mill = await millModel.create({ mill_name, address: newLoaction._id });
   if (mill) {
-    const userIDs = await userModel.distinct("_id", { role: "driver" });
+    const userIDs = await userModel.distinct('_id', { role: 'driver' });
 
-    const notificationData = userIDs.map((id) => ({
+    const notificationData = userIDs.map(id => ({
       driver: id,
       title: "New Mill Created",
-      text: `A new mill, ${mill_name}, is created.`,
+      text: `A new mill, ${mill_name}, is created.`
     }));
     await notificationModel.create(notificationData);
   }
@@ -67,9 +67,7 @@ exports.getAllMill = catchAsyncError(async (req, res, next) => {
     mills = await apiFeature.query.clone();
   }
   console.log("mills", mills);
-  res
-    .status(200)
-    .json({ mills: mills.filter((mill) => mill.address != null), millCount });
+  res.status(200).json({ mills, millCount });
 });
 
 // Update mill
