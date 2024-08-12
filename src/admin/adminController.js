@@ -144,7 +144,7 @@ exports.createUser = catchAsyncError(async (req, res, next) => {
     location = result.Location;
   }
 
-  const driver = userModel.create({
+  const driver = await userModel.create({
     firstname,
     lastname,
     email,
