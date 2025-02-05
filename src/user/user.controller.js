@@ -15,7 +15,7 @@ const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, SERVICE_SID } = process.env;
 const client = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
 
 const findUser = async (options, next) => {
-  console.log("FIND_USER", { options });
+  // console.log("FIND_USER", { options });
   const user = await userModel.findOne(options);
   console.log({ user });
   if (!user) {
