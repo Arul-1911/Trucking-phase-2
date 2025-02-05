@@ -28,9 +28,13 @@ const findUser = async (options, next) => {
 };
 
 const sendOTP = async (phoneNo) => {
-  return await client.verify.v2
-    .services(SERVICE_SID)
-    .verifications.create({ to: phoneNo, channel: "sms" });
+  try {
+    return await client.verify.v2
+      .services(process.env.SERVICE_SID)
+      .verifications.create({ to: phoneNo, channel: "sms" });
+  } catch (error) {
+    throw new ErrorHandler("Failed to send OTP", 500);
+  }
 };
 
 const verifyOTP = async (phoneNo, code) => {

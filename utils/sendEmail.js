@@ -1,4 +1,4 @@
-const nodeMailer = require('nodemailer');
+const nodeMailer = require("nodemailer");
 
 const sendEmail = async (options) => {
   console.log("inside sendEmail", { options });
@@ -7,14 +7,15 @@ const sendEmail = async (options) => {
     host: process.env.SMPT_HOST,
     port: process.env.SMPT_PORT,
     service: process.env.SMPT_SERVICE,
+    secure: true,
     auth: {
       user: process.env.SMPT_EMAIL,
-      pass: process.env.SMPT_PASSWORD
-    }
-  })
+      pass: process.env.SMPT_PASSWORD,
+    },
+  });
 
   // const smtp = await nodeMailer.createTestAccount();
-  
+
   // const transporter = nodeMailer.createTransport({
   //   host: smtp.smtp.host,
   //   port: smtp.smtp.port,
@@ -34,9 +35,8 @@ const sendEmail = async (options) => {
   });
 
   console.log({ id });
-
 };
 
 module.exports = sendEmail;
 
-// SMPT = simple mail transfer protocol
+// SMTP = simple mail transfer protocol
