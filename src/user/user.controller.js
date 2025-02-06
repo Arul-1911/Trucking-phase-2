@@ -10,6 +10,8 @@ const { s3Uploadv2 } = require("../../utils/s3");
 const sendEmail = require("../../utils/sendEmail");
 const { optGenerator } = require("../../utils/randGenerator");
 const locationModel = require("./user.location.model");
+const Company  = require("../company/company.model");
+
 
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, SERVICE_SID } = process.env;
 const client = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
@@ -48,31 +50,92 @@ const verifyOTP = async (phoneNo, code) => {
 };
 
 // Create a new document
+// exports.createUser = catchAsyncError(async (req, res, next) => {
+//   console.log("createUser", req.body);
+
+//   const session = await mongoose.startSession();
+//   session.startTransaction();
+//   try {
+//     let user = await userModel
+//       .findOne({ mobile_no: req.body.mobile_no })
+//       .select("+isRegistered");
+//     console.log({ user });
+//     if (!user) {
+//       user = (await userModel.create([req.body], { session }))[0];
+//     } else {
+//       if (user.isRegistered)
+//         return next(
+//           new ErrorHandler(
+//             "User is already registered with this mobile number.",
+//             400
+//           )
+//         );
+//       else {
+//         await userModel.findOneAndUpdate(
+//           { mobile_no: req.body.mobile_no },
+//           req.body,
+//           {
+//             new: true,
+//             runValidators: true,
+//             validateBeforeSave: true,
+//           }
+//         );
+//       }
+//     }
+
+//     const phoneNo = `${user.country_code}${user.mobile_no}`;
+//     const messageRes = await sendOTP(phoneNo);
+
+//     await session.commitTransaction();
+//     res.status(201).json({ message: "OTP sent successfully" });
+//   } catch (err) {
+//     await session.abortTransaction();
+//     next(err);
+//   } finally {
+//     await session.endSession();
+//   }
+// });
 exports.createUser = catchAsyncError(async (req, res, next) => {
   console.log("createUser", req.body);
 
-  // await userModel.create(req.body);
+  const { mobile_no, company_id } = req.body;
+
+  if(!company_id){
+    return next(new ErrorHandler("company name is required", 400));
+  }
+
+  // Validate if company_id exists
+  if (!mongoose.isValidObjectId(company_id)) {
+    return next(new ErrorHandler("Invalid company ID.", 400));
+  }
+
+  const companyExists = await Company.findById(company_id);
+  if (!companyExists) {
+    return next(new ErrorHandler("Company not found.", 404));
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
-    let user = await userModel
-      .findOne({ mobile_no: req.body.mobile_no })
-      .select("+isRegistered");
+    let user = await userModel.findOne({ mobile_no }).select("+isRegistered");
     console.log({ user });
+
     if (!user) {
+      req.body.company_id = company_id;
       user = (await userModel.create([req.body], { session }))[0];
     } else {
-      if (user.isRegistered)
+      if (user.isRegistered) {
         return next(
           new ErrorHandler(
             "User is already registered with this mobile number.",
             400
           )
         );
-      else {
+      } else {
         await userModel.findOneAndUpdate(
-          { mobile_no: req.body.mobile_no },
-          req.body,
+          { mobile_no },
+          { ...req.body, company_id },
           {
             new: true,
             runValidators: true,
