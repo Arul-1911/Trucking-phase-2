@@ -10,8 +10,8 @@ const {
 } = require("./company.controller");
 
 router.post("/", auth, createCompany);
-router.get("/", auth, getAllCompanies);
-router.get("/:id", auth, getCompanyById);
+router.get("/", getAllCompanies);
+router.get("/:id", getCompanyById);
 router.put("/:id", auth, updateCompany);
 router.delete("/:id", auth, deleteCompany);
 
