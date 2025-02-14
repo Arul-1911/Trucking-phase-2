@@ -11,7 +11,7 @@ const locationSchema = new mongoose.Schema({
   }, 
   name: {
     type: String,
-    unique: true,
+    // unique: true,
     required: [true, "Location Name is required."]
   }
 }, { timestamps: true });

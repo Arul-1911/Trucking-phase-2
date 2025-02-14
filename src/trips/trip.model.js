@@ -26,19 +26,26 @@ const tripSchema = new mongoose.Schema(
       ref: "Location",
       required: [true, "Source location is required."],
     },
-    load_loc: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Location",
-      required: [true, "Load location is required."],
-    },
-    unload_loc: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Mill",
-    },
+    load_loc: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Location",
+        // required: [true, "At least one Load location is required."],
+      },
+    ],
+    unload_loc: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Location",
+      },
+    ],
     end_loc: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Location",
+      required: [true, "End location is required."],
     },
+
+    trip_description: String,
 
     truck: {
       type: mongoose.Schema.Types.ObjectId,
@@ -49,32 +56,29 @@ const tripSchema = new mongoose.Schema(
       type: Number,
       required: [true, "Start Milage is Required."],
     },
-    load_milage: { type: Number },
-    unload_milage: { type: Number },
-    end_milage: { type: Number },
-    dispatch: {
-      type: String,
-      // required: [true, "Dispatch info is required."]
-    },
+    load_milage: Number,
+    unload_milage: Number,
+    end_milage: Number,
+    dispatch: String,
 
-    load_loc_arr_time: { type: Date },
-    load_time_start: { type: Date },
-    load_time_end: { type: Date },
+    load_loc_arr_time: [{ type: Date }],
+    load_time_start: [{ type: Date }],
+    load_time_end: [{ type: Date }],
 
-    unload_loc_arr_time: { type: Date },
-    unload_time_start: { type: Date },
-    unload_time_end: { type: Date },
+    unload_loc_arr_time: [{ type: Date }],
+    unload_time_start: [{ type: Date }],
+    unload_time_end: [{ type: Date }],
 
-    prod_detail: { type: String },
-    gross_wt: { type: Number },
-    tare_wt: { type: Number },
-    net_wt: { type: Number },
+    prod_detail: String,
+    gross_wt: Number,
+    tare_wt: Number,
+    net_wt: Number,
 
     docs: [{ type: String }],
-    slip_id: { type: String },
-    block_no: { type: String },
+    slip_id: String,
+    block_no: String,
 
-    unload_depart_time: { type: Date },
+    unload_depart_time: [{ type: Date }],
     warehouse_arr_time: { type: Date },
 
     second_trip_start_time: { type: Date },
@@ -93,18 +97,17 @@ const locRecordSchema = new mongoose.Schema(
       required: [true, "Trip Id required."],
     },
     source_loc: {},
-
-    load_loc_arr: {},
-    load_start: {},
-    load_end: {},
+    load_loc_arr: [{}],
+    load_start: [{}],
+    load_end: [{}],
 
     second_trip: {},
-    unload_loc_arr: {},
-    unload_start: {},
-    unload_end: {},
+    unload_loc_arr: [{}],
+    unload_start: [{}],
+    unload_end: [{}],
 
     product: {},
-    unload_depart: {},
+    unload_depart: [{}],
     warehouse_arr: {},
 
     end_loc: {},
