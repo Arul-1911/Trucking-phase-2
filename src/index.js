@@ -8,6 +8,7 @@ const { contentRoute } = require("./content");
 const { locationRoute } = require("./location");
 const { notificationRoute } = require("./notification");
 const { companyRoute } = require("./company");
+const { InspectionRoute } = require("./truckMaintanence");
 
 module.exports = {
   adminRoute,
@@ -20,4 +21,5 @@ module.exports = {
   contentRoute,
   notificationRoute,
   companyRoute,
+  InspectionRoute,
 };

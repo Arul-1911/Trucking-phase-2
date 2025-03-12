@@ -30,6 +30,7 @@ const {
   contentRoute,
   notificationRoute,
   companyRoute,
+  InspectionRoute,
 } = require("./src");
 
 app.use("/api/admin", adminRoute);
@@ -42,6 +43,7 @@ app.use("/api/mill", millRoute);
 app.use("/api/content", contentRoute);
 app.use("/api/notification", notificationRoute);
 app.use("/api/company", companyRoute);
+app.use("/api/truck-maintanence", InspectionRoute);
 
 app.all("*", async (req, res) => {
   res.status(404).json({
