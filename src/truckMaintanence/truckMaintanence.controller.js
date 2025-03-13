@@ -326,6 +326,85 @@ exports.addSubItemToCategory = catchAsyncError(async (req, res, next) => {
 });
 
 // =======================================
+// GET Inspection Layout Template (Categories & Sub-items)
+// =======================================
+exports.getLayoutTemplate = catchAsyncError(async (req, res, next) => {
+  const template = await InspectionTemplate.findOne();
+
+  if (!template || !template.categories.length) {
+    return next(
+      new ErrorHandler(
+        "No inspection template found. Please set up categories.",
+        404
+      )
+    );
+  }
+
+  res.status(200).json({ success: true, template });
+});
+
+// =======================================
+// CREATE/UPDATE Inspection for a Single Truck (Categories & Sub-items)
+// =======================================
+
+exports.upsertInspection = catchAsyncError(async (req, res, next) => {
+  const { truck_id, driver_id, oil_level } = req.body;
+
+  if (!truck_id || !driver_id || !oil_level) {
+    return next(
+      new ErrorHandler("Truck ID, Driver ID, and Oil Level are required.", 400)
+    );
+  }
+  if (!isValidObjectId(truck_id) || !isValidObjectId(driver_id)) {
+    return next(new ErrorHandler("Invalid Truck ID or Driver ID.", 400));
+  }
+
+  let inspection = await TruckInspection.findOne({ truck_id });
+
+  if (inspection) {
+    // Update existing inspection
+    inspection.driver_id = driver_id;
+    inspection.oil_level = oil_level;
+
+    await inspection.save();
+
+    res.status(200).json({
+      success: true,
+      updatedInspection: inspection,
+      message: "Truck Inspection updated successfully",
+    });
+  } else {
+    // Create new inspection if it doesn't exist
+    const template = await InspectionTemplate.findOne();
+    if (!template || !template.categories.length) {
+      return next(
+        new ErrorHandler(
+          "Inspection template not found or empty. Set up global categories first.",
+          500
+        )
+      );
+    }
+
+    const categoriesWithDefaultStatus = template.categories.map((category) => ({
+      category: category.category,
+      sub_items: category.sub_items.map((subItem) => ({
+        item: subItem.item,
+        status: "Good",
+      })),
+    }));
+
+    const inspection = await TruckInspection.create({
+      truck_id,
+      driver_id,
+      oil_level,
+      inspection_categories: categoriesWithDefaultStatus,
+    });
+
+    res.status(201).json({ success: true, inspection });
+  }
+});
+
+// =======================================
 // DELETE a specific Sub-Item from a Category in the Global Template and sync with inspections
 // =======================================
 exports.deleteSubItemFromCategory = catchAsyncError(async (req, res, next) => {

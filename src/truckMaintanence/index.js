@@ -10,6 +10,8 @@ const {
   deleteCategoryFromTemplate,
   addSubItemToCategory,
   deleteSubItemFromCategory,
+  getLayoutTemplate,
+  upsertInspection,
 } = require("./truckMaintanence.controller");
 const { auth, isAdmin } = require("../../middlewares/auth");
 
@@ -28,5 +30,9 @@ router.get("/admin/all", auth, isAdmin, getAllinsepctions); // Get all inspectio
 router.get("/:truck_id", auth, getInspectionsByTruck); // Get all inspections for a truck
 router.put("/:truck_id", auth, updateInspectionByTruck); // Update an inspection
 router.delete("/:truck_id", auth, deleteinsoectionByTruck); // Delete an inspection
+router.post("/upsert", auth, upsertInspection); // Update/Create single truck Inspection
+
+// New Route: Get Inspection Layout Template
+router.get("/template/layout", auth, getLayoutTemplate);
 
 module.exports = { InspectionRoute: router };
