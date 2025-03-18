@@ -126,8 +126,15 @@ exports.getDashBoardData = catchAsyncError(async (req, res, next) => {
 });
 
 exports.createUser = catchAsyncError(async (req, res, next) => {
-  const {firstname, lastname, email, password, mobile_no, country_code} =
-    req.body;
+  const {
+    first_name,
+    last_name,
+    email,
+    password,
+    mobile_no,
+    country_code,
+    company_id,
+  } = req.body;
   let location = "";
   const existingdriver = await userModel.findOne({
     $or: [{ email }, { mobile_no }],
@@ -145,17 +152,16 @@ exports.createUser = catchAsyncError(async (req, res, next) => {
   }
 
   const driver = await userModel.create({
-    firstname,
-    lastname,
+    first_name,
+    last_name,
     email,
     password,
     mobile_no,
     country_code,
     isRegistered: true,
     profile_url: location,
+    company_id,
   });
-
-  // await driver.save();
 
   res.status(201).json({
     success: true,
