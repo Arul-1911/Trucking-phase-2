@@ -43,13 +43,13 @@ exports.adminLogin = catchAsyncError(async (req, res, next) => {
 
 exports.updateAdminProfile = catchAsyncError(async (req, res, next) => {
   console.log("UPDATE ADMIN PROFILE", req.body);
-  const { firstname, lastname, mobile_no, profile_url, password, email } =
+  const { first_name, last_name, mobile_no, profile_url, password, email } =
     req.body;
 
   const user = await userModel.findById(req.userId);
   user.email = email;
-  user.firstname = firstname;
-  user.lastname = lastname;
+  user.first_name = first_name;
+  user.last_name = last_name;
   user.mobile_no = mobile_no;
   user.profile_url = profile_url;
   if (password) user.password = password;

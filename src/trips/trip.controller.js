@@ -782,7 +782,7 @@ exports.getTrip = catchAsyncError(async (req, res, next) => {
       ...populateTrip,
       {
         path: "driver.dId",
-        select: "firstname lastname mobile_no country_code",
+        select: "first_name last_name mobile_no country_code",
       },
     ]);
   if (!trip) {
