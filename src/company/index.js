@@ -9,10 +9,10 @@ const {
   deleteCompany,
 } = require("./company.controller");
 
-router.post("/", isAdmin, createCompany);
+router.post("/", auth, isAdmin, createCompany);
 router.get("/", getAllCompanies);
 router.get("/:id", getCompanyById);
-router.put("/:id", isAdmin, updateCompany);
-router.delete("/:id", isAdmin, deleteCompany);
+router.put("/:id", auth, isAdmin, updateCompany);
+router.delete("/:id", auth, isAdmin, deleteCompany);
 
 module.exports = { companyRoute: router };
