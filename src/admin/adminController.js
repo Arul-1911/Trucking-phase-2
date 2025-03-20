@@ -108,7 +108,7 @@ exports.calcCharge = catchAsyncError(async (req, res, next) => {
 
 exports.getDashBoardData = catchAsyncError(async (req, res, next) => {
   const [userCount, tripCount, truckCount, locationCount] = await Promise.all([
-    userModel.countDocuments(),
+    userModel.countDocuments({ role: "driver" }),
     tripModel.countDocuments(),
     truckModel.countDocuments(),
     locationModel.countDocuments(),
