@@ -65,21 +65,21 @@ router
 router.post("/image", auth, isAdmin, upload.single("image"), postSingleImage);
 
 // ------------------------------------ TRUCK ---------------------------------
-const {
-  createTruck,
-  getAllTruck,
-  getTruck,
-  updateTruck,
-  deleteTruck,
-} = require("../trucks");
+// const {
+//   createTruck,
+//   getAllTruck,
+//   getTruck,
+//   updateTruck,
+//   deleteTruck,
+// } = require("../trucks");
 
-router.post("/truck", auth, isAdmin, createTruck);
-router.get("/truck", auth, isAdmin, getAllTruck);
-router
-  .route("/truck/:id")
-  .get(auth, isAdmin, getTruck)
-  .put(auth, isAdmin, updateTruck)
-  .delete(auth, isAdmin, deleteTruck);
+// router.post("/truck", auth, isAdmin, createTruck);
+// router.get("/truck", auth, isAdmin, getAllTruck);
+// router
+//   .route("/truck/:id")
+//   .get(auth, isAdmin, getTruck)
+//   .put(auth, isAdmin, updateTruck)
+//   .delete(auth, isAdmin, deleteTruck);
 
 // ------------------------------------ Mill ---------------------------------
 const {
