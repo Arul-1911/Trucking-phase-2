@@ -42,7 +42,7 @@ const tripSchema = new mongoose.Schema(
     end_loc: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Location",
-      required: [true, "End location is required."],
+      // required: [true, "End location is required."],
     },
 
     trip_description: String,
@@ -86,6 +86,16 @@ const tripSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+tripSchema.pre("validate", function (next) {
+  if (!this.end_loc && this.status === "completed") {
+    this.invalidate(
+      "end_loc",
+      "End location is required when the trip is completed."
+    );
+  }
+  next();
+});
 
 const tripModel = mongoose.model("Trip", tripSchema);
 

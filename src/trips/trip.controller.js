@@ -77,20 +77,139 @@ const populateTrip = [
 //   }
 //   res.status(201).json({ trip });
 // });
-exports.createTrip = catchAsyncError(async (req, res, next) => {
-  console.log("createTrip", req.body);
-  const { loc, source_loc, end_loc } = req.body;
 
-  if (!loc) {
+// exports.createTrip = catchAsyncError(async (req, res, next) => {
+//   console.log("createTrip", req.body);
+//   const { loc, source_loc, end_loc } = req.body;
+
+//   if (!loc) {
+//     return next(new ErrorHandler("Current Location is required", 400));
+//   }
+//   loc.time = Date.now();
+
+//   if (!source_loc) {
+//     return next(new ErrorHandler("Source Location is required", 400));
+//   }
+
+//   const userId = req.userId;
+//   const user = await userModel.findById(userId).select("+hasTrip");
+//   if (!user) {
+//     return next(new ErrorHandler("Driver not found.", 404));
+//   }
+
+//   if (user.hasTrip) {
+//     return next(
+//       new ErrorHandler(
+//         "Your current trip is not completed. Can't start another one.",
+//         400
+//       )
+//     );
+//   }
+
+//   const { truck } = req.body;
+//   if (!truck) {
+//     return next(new ErrorHandler("Please select a truck", 400));
+//   }
+
+//   const isAvailTruck = await truckModel.findOne({ _id: truck, is_avail: true });
+//   if (!isAvailTruck) {
+//     return next(new ErrorHandler("The truck is already in use.", 400));
+//   }
+
+//   // Check if the source location already exists
+//   let existingSourceLoc = await locationModel.findOne({
+//     name: source_loc.name,
+//     lat: source_loc.lat,
+//     long: source_loc.long,
+//   });
+
+//   let sourceLocId;
+//   if (existingSourceLoc) {
+//     sourceLocId = existingSourceLoc._id;
+//   } else {
+//     // Create the source location
+//     const newSourceLoc = await locationModel.create(source_loc);
+//     sourceLocId = newSourceLoc._id;
+//   }
+
+//   // Check if the end location already exists
+//   let endLocId;
+//   if (end_loc) {
+//     let existingEndLoc = await locationModel.findOne({
+//       name: end_loc.name,
+//       lat: end_loc.lat,
+//       long: end_loc.long,
+//     });
+
+//     if (existingEndLoc) {
+//       endLocId = existingEndLoc._id;
+//     } else {
+//       // Create the end location
+//       const newEndLoc = await locationModel.create(end_loc);
+//       endLocId = newEndLoc._id;
+//     }
+//   }
+
+//   const trip = await tripModel.create({
+//     ...req.body,
+//     source_loc: sourceLocId,
+//     end_loc: endLocId,
+//     driver: [{ dId: userId, time: Date.now() }],
+//   });
+//   if (trip) {
+//     isAvailTruck.is_avail = false;
+//     await isAvailTruck.save();
+
+//     user.hasTrip = true;
+//     await user.save();
+
+//     // creating location
+//     await locRecordModel.create({ trip: trip._id, source_loc: loc });
+//   }
+//   res.status(201).json({ trip });
+// });
+
+// To Create  a trip
+exports.createTrip = catchAsyncError(async (req, res, next) => {
+  console.log("createTrip Request Body:", req.body);
+
+  const {
+    start_milage,
+    source_loc: sourceLocId,
+    load_loc: loadLocId,
+    truck: truckId,
+    trip_description,
+    dispatch,
+    loc,
+  } = req.body;
+
+  if (!start_milage) {
+    return next(new ErrorHandler("Start Milage is required", 400));
+  }
+
+  if (!loc || !loc.name || !loc.lat == null || !loc.long == null) {
     return next(new ErrorHandler("Current Location is required", 400));
   }
+
   loc.time = Date.now();
 
-  if (!source_loc) {
+  if (!sourceLocId) {
     return next(new ErrorHandler("Source Location is required", 400));
   }
 
+  if (!loadLocId) {
+    return next(new ErrorHandler("Load Location is required", 400));
+  }
+
+  if (!truckId) {
+    return next(new ErrorHandler("Please select a truck", 400));
+  }
+
   const userId = req.userId;
+  if (!userId) {
+    return next(new ErrorHandler("Authentication required.", 401));
+  }
+
   const user = await userModel.findById(userId).select("+hasTrip");
   if (!user) {
     return next(new ErrorHandler("Driver not found.", 404));
@@ -105,67 +224,54 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
     );
   }
 
-  const { truck } = req.body;
-  if (!truck) {
-    return next(new ErrorHandler("Please select a truck", 400));
-  }
+  const isAvailTruck = await truckModel.findOne({
+    _id: truckId,
+    is_avail: true,
+  });
 
-  const isAvailTruck = await truckModel.findOne({ _id: truck, is_avail: true });
   if (!isAvailTruck) {
     return next(new ErrorHandler("The truck is already in use.", 400));
   }
 
-  // Check if the source location already exists
-  let existingSourceLoc = await locationModel.findOne({
-    name: source_loc.name,
-    lat: source_loc.lat,
-    long: source_loc.long,
-  });
-
-  let sourceLocId;
-  if (existingSourceLoc) {
-    sourceLocId = existingSourceLoc._id;
-  } else {
-    // Create the source location
-    const newSourceLoc = await locationModel.create(source_loc);
-    sourceLocId = newSourceLoc._id;
+  //verify the provides location ID exists
+  const sourceLocationExists = await locationModel.findById(sourceLocId).lean();
+  if (!sourceLocationExists) {
+    return next(new ErrorHandler("Source Location not found.", 404));
   }
 
-  // Check if the end location already exists
-  let endLocId;
-  if (end_loc) {
-    let existingEndLoc = await locationModel.findOne({
-      name: end_loc.name,
-      lat: end_loc.lat,
-      long: end_loc.long,
-    });
-
-    if (existingEndLoc) {
-      endLocId = existingEndLoc._id;
-    } else {
-      // Create the end location
-      const newEndLoc = await locationModel.create(end_loc);
-      endLocId = newEndLoc._id;
-    }
+  const loadLocationExists = await locationModel.findById(loadLocId).lean();
+  if (!loadLocationExists) {
+    return next(new ErrorHandler("Load Location not found.", 404));
   }
 
-  const trip = await tripModel.create({
-    ...req.body,
+  //Trip data's
+  const tripData = {
+    start_milage,
     source_loc: sourceLocId,
-    end_loc: endLocId,
+    load_loc: loadLocId,
+    truck: truckId,
+    trip_description,
+    dispatch,
     driver: [{ dId: userId, time: Date.now() }],
-  });
+  };
+
+  const trip = await tripModel.create(tripData);
+
   if (trip) {
     isAvailTruck.is_avail = false;
     await isAvailTruck.save();
-
     user.hasTrip = true;
     await user.save();
 
-    // creating location
+    //creating location
     await locRecordModel.create({ trip: trip._id, source_loc: loc });
+  } else {
+    return next(new ErrorHandler("Failed to create trip.", 500));
   }
-  res.status(201).json({ trip });
+
+  res
+    .status(201)
+    .json({ success: true, trip, message: "Trip created successfully" });
 });
 
 // Get Current Trip or Trip by _id of Driver
