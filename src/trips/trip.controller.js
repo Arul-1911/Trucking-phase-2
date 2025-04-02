@@ -170,6 +170,7 @@ const populateTrip = [
 // });
 
 // To Create  a trip
+// To Create a trip
 exports.createTrip = catchAsyncError(async (req, res, next) => {
   console.log("createTrip Request Body:", req.body);
 
@@ -187,7 +188,7 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Start Milage is required", 400));
   }
 
-  if (!loc || !loc.name || !loc.lat == null || !loc.long == null) {
+  if (!loc || !loc.name || loc.lat == null || loc.long == null) {
     return next(new ErrorHandler("Current Location is required", 400));
   }
 
@@ -233,7 +234,7 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("The truck is already in use.", 400));
   }
 
-  //verify the provides location ID exists
+  // Verify the provided location ID exists
   const sourceLocationExists = await locationModel.findById(sourceLocId).lean();
   if (!sourceLocationExists) {
     return next(new ErrorHandler("Source Location not found.", 404));
@@ -244,7 +245,7 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
     return next(new ErrorHandler("Load Location not found.", 404));
   }
 
-  //Trip data's
+  // Trip data
   const tripData = {
     start_milage,
     source_loc: sourceLocId,
@@ -263,15 +264,33 @@ exports.createTrip = catchAsyncError(async (req, res, next) => {
     user.hasTrip = true;
     await user.save();
 
-    //creating location
-    await locRecordModel.create({ trip: trip._id, source_loc: loc });
+    // Creating location record
+    const locRecord = await locRecordModel.create({
+      trip: trip._id,
+      source_loc: loc,
+    });
+
+    // Populate the response with loc fields
+    const populatedTrip = await tripModel
+      .findById(trip._id)
+      .populate({
+        path: "source_loc",
+        select: "name lat long",
+      })
+      .populate({
+        path: "load_loc",
+        select: "name lat long",
+      });
+
+    res.status(201).json({
+      success: true,
+      trip: populatedTrip,
+      location: locRecord.source_loc,
+      message: "Trip created successfully",
+    });
   } else {
     return next(new ErrorHandler("Failed to create trip.", 500));
   }
-
-  res
-    .status(201)
-    .json({ success: true, trip, message: "Trip created successfully" });
 });
 
 // Get Current Trip or Trip by _id of Driver
