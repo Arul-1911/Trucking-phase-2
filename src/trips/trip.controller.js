@@ -169,7 +169,6 @@ const populateTrip = [
 //   res.status(201).json({ trip });
 // });
 
-// To Create  a trip
 // To Create a trip
 exports.createTrip = catchAsyncError(async (req, res, next) => {
   console.log("createTrip Request Body:", req.body);
@@ -620,22 +619,55 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
   let record = {};
   let missingFields = null;
 
+  const existingTrip = await tripModel.findById(id);
+  if (!existingTrip) {
+    return next(new ErrorHandler("Trip not found.", 404));
+  }
+
+  let loadLocLength = existingTrip.load_loc?.length;
+  let unLoadLocLength = existingTrip.unload_loc?.length;
+
   if (req.body.trip_description) {
     updatedData.trip_description = req.body.trip_description;
   }
 
   switch (req.query.UPDATE_TRIP) {
     case "LOAD_ARRIVAL_TIME":
+      if (existingTrip.load_loc_arr_time?.length >= loadLocLength) {
+        return next(
+          new ErrorHandler(
+            "Load Arrival time already added for all pickup locations."
+          ),
+          400
+        );
+      }
+
       updatedData.$push = { load_loc_arr_time: Date.now() };
       record = { load_loc_arr: loc };
       break;
 
     case "LOAD_TIME_START":
+      if (existingTrip.load_time_start?.length >= loadLocLength) {
+        return next(
+          new ErrorHandler(
+            "Load Start time already added for all pickup locations."
+          ),
+          400
+        );
+      }
       updatedData.$push = { load_time_start: Date.now() };
       record = { load_start: loc };
       break;
 
     case "LOAD_TIME_END":
+      if (existingTrip.load_time_end?.length >= loadLocLength) {
+        return next(
+          new ErrorHandler(
+            "Load End time already added for all pickup locations."
+          ),
+          400
+        );
+      }
       updatedData.$push = { load_time_end: Date.now() };
       record = { load_end: loc };
       break;
@@ -706,16 +738,36 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
       break;
 
     case "UNLOAD_ARRIVAL_TIME":
+      if (existingTrip.unload_loc_arr_time?.length >= unLoadLocLength) {
+        return next(
+          new ErrorHandler(
+            "Arrival time already added for all drop locations."
+          ),
+          400
+        );
+      }
       updatedData.$push = { unload_loc_arr_time: Date.now() };
       record = { unload_loc_arr: loc };
       break;
 
     case "UNLOAD_TIME_START":
+      if (existingTrip.unload_time_start?.length >= loadLocLength) {
+        return next(
+          new ErrorHandler("Start time already added for all drop locations."),
+          400
+        );
+      }
       updatedData.$push = { unload_time_start: Date.now() };
       record = { unload_start: loc };
       break;
 
     case "UNLOAD_TIME_END":
+      if (existingTrip.unload_time_end?.length >= loadLocLength) {
+        return next(
+          new ErrorHandler("End time already added for all drop locations."),
+          400
+        );
+      }
       updatedData.$push = { unload_time_end: Date.now() };
       record = { unload_end: loc };
       break;
@@ -811,15 +863,25 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
   }
 
   console.log(updatedData, Object.entries(req.body));
-  const trip = await tripModel.findOneAndUpdate(
-    { _id: id, status: "on-going" },
-    updatedData,
-    {
+  const trip = await tripModel
+    .findOneAndUpdate({ _id: id, status: "on-going" }, updatedData, {
       new: true,
       runValidators: true,
       validateBeforeSave: true,
-    }
-  );
+    })
+    // .populate("load_loc unload_loc end_loc", "name lat long");
+    .populate({
+      path: "source_loc",
+      select: "name lat long",
+    })
+    .populate({
+      path: "load_loc",
+      select: "name lat long",
+    })
+    .populate({
+      path: "unload_loc",
+      select: "name lat long",
+    });
   if (!trip) {
     return next(new ErrorHandler("Trip not found.", 404));
   }
