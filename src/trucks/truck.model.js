@@ -88,7 +88,7 @@ const truckSchema = new mongoose.Schema(
           driver_id: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
-            required: [true, "Driver Id is required"],
+            required: [false, "Driver Id is required"],
           },
           oil_level: {
             type: String,

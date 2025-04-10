@@ -10,8 +10,7 @@ const { s3Uploadv2 } = require("../../utils/s3");
 const sendEmail = require("../../utils/sendEmail");
 const { optGenerator } = require("../../utils/randGenerator");
 const locationModel = require("./user.location.model");
-const Company  = require("../company/company.model");
-
+const Company = require("../company/company.model");
 
 const { TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, SERVICE_SID } = process.env;
 const client = require("twilio")(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN);
@@ -40,7 +39,7 @@ const sendOTP = async (phoneNo) => {
 };
 
 const verifyOTP = async (phoneNo, code) => {
-  if (phoneNo == "+919528946340") return true;
+  // if (phoneNo == "+919528946340") return true;
   const { status, valid } = await client.verify.v2
     .services(SERVICE_SID)
     .verificationChecks.create({ to: phoneNo, code: code });
@@ -100,7 +99,7 @@ exports.createUser = catchAsyncError(async (req, res, next) => {
 
   const { mobile_no, company_id } = req.body;
 
-  if(!company_id){
+  if (!company_id) {
     return next(new ErrorHandler("company name is required", 400));
   }
 

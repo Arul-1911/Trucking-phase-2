@@ -120,7 +120,7 @@ exports.getAllTruck = catchAsyncError(async (req, res, next) => {
           populate: [
             {
               path: "inspections.driver_id",
-              select: "name email",
+              select: "first_name last_name",
               model: "User",
             },
           ],
