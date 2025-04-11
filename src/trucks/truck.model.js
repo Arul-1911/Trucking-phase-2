@@ -92,7 +92,7 @@ const truckSchema = new mongoose.Schema(
           },
           oil_level: {
             type: String,
-            required: [true, "Oil level is required"],
+            required: [false, "Oil level is required"],
             trim: true,
           },
           inspection_categories: {
