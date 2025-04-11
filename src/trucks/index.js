@@ -9,7 +9,7 @@ const {
   deleteTruck,
 } = require("./truck.controller");
 
-router.get("/", auth, getAllTruck);
+router.get("/", auth, isAdmin, getAllTruck);
 router.get("/:id", auth, getTruck);
 router.post("/", auth, isAdmin, createTruck);
 router.put("/:id", auth, updateTruck);

@@ -108,66 +108,90 @@ exports.createTruck = catchAsyncError(async (req, res, next) => {
 });
 
 //Get All trucks
+// exports.getAllTruck = catchAsyncError(async (req, res, next) => {
+//   const query = req.user ? {} : {};
+
+//   try {
+//     const apiFeature = new APIFeatures(
+//       truckModel
+//         .find(query)
+//         .populate({
+//           path: "inspections",
+//           populate: [
+//             {
+//               path: "inspections.driver_id",
+//               select: "first_name last_name",
+//               model: "User",
+//             },
+//           ],
+//         })
+//         .select(
+//           "truck_id driver_id plate_no name is_avail inspections createdAt updatedAt"
+//         )
+//         // .search("driver_id")
+//         .sort({ createdAt: -1 }),
+//       req.query
+//     )
+//       .search("truck_id")
+//       .pagination();
+
+//     const [trucks, truckCount] = await Promise.all([
+//       apiFeature.query.lean(),
+//       truckModel.countDocuments(query),
+//     ]);
+
+//     // Add debug logging
+//     console.log("Query executed:", apiFeature.query.getFilter());
+//     console.log(
+//       "First truck inspections:",
+//       trucks.length > 0 ? trucks[0].inspections : "No trucks found"
+//     );
+
+//     if (!trucks.length) {
+//       return res.status(200).json({
+//         success: true,
+//         message: "No trucks found",
+//         trucks: [],
+//         truckCount: 0,
+//       });
+//     }
+
+//     res.status(200).json({
+//       success: true,
+//       trucks,
+//       truckCount,
+//       message: "Trucks fetched successfully",
+//     });
+//   } catch (error) {
+//     console.error("Error in getAllTruck:", error);
+//     return next(
+//       new ErrorHandler("Error fetching trucks: " + error.message, 500)
+//     );
+//   }
+// });
 exports.getAllTruck = catchAsyncError(async (req, res, next) => {
-  const query = req.user ? {} : { is_avail: true };
-
-  try {
-    const apiFeature = new APIFeatures(
-      truckModel
-        .find(query)
-        .populate({
-          path: "inspections",
-          populate: [
-            {
-              path: "inspections.driver_id",
-              select: "first_name last_name",
-              model: "User",
-            },
-          ],
-        })
-        .select(
-          "truck_id driver_id plate_no name is_avail inspections createdAt updatedAt"
-        )
-        // .search("driver_id")
-        .sort({ createdAt: -1 }),
-      req.query
-    )
-      .search("truck_id")
-      .pagination();
-
-    const [trucks, truckCount] = await Promise.all([
-      apiFeature.query.lean(),
-      truckModel.countDocuments(query),
-    ]);
-
-    // Add debug logging
-    console.log("Query executed:", apiFeature.query.getFilter());
-    console.log(
-      "First truck inspections:",
-      trucks.length > 0 ? trucks[0].inspections : "No trucks found"
-    );
-
-    if (!trucks.length) {
-      return res.status(200).json({
-        success: true,
-        message: "No trucks found",
-        trucks: [],
-        truckCount: 0,
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      trucks,
-      truckCount,
-      message: "Trucks fetched successfully",
-    });
-  } catch (error) {
-    console.error("Error in getAllTruck:", error);
-    return next(
-      new ErrorHandler("Error fetching trucks: " + error.message, 500)
-    );
+  console.log("getAllTruck", req.query);
+  const qry = {};
+  if (!req.user) {
+    qry.is_avail = true;
   }
+
+  const apiFeature = new APIFeatures(
+    truckModel.find(qry).sort({ createdAt: -1 }),
+    req.query
+  ).search("truck_id");
+
+  let trucks = await apiFeature.query;
+  console.log("Trucks", trucks);
+  let truckCount = trucks.length;
+  if (req.query.resultPerPage && req.query.currentPage) {
+    apiFeature.pagination();
+
+    console.log("truckCount", truckCount);
+    trucks = await apiFeature.query.clone();
+  }
+  console.log("trucks", trucks);
+  res.status(200).json({ trucks, truckCount });
 });
 
 //Get Single Truck
