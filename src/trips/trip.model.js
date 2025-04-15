@@ -42,7 +42,8 @@ const tripSchema = new mongoose.Schema(
     end_loc: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Location",
-      // required: [true, "End location is required."],
+      required: [true, "End location is required."],
+      default: null,
     },
 
     trip_description: String,
