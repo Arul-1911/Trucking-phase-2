@@ -850,15 +850,41 @@ exports.updateTrip = catchAsyncError(async (req, res, next) => {
     // }
 
     default:
-      const { end_milage } = req.body;
-      if (!end_milage) {
-        return next(new ErrorHandler("End mileage is required.", 400));
+      const { end_milage, end_loc } = req.body;
+
+      if (!end_milage || !end_loc) {
+        return next(
+          new ErrorHandler("End mileage and End Location are required.", 400)
+        );
       }
 
+      // Validate end_loc structure
+      if (!end_loc.name || !end_loc.lat || !end_loc.long) {
+        return next(
+          new ErrorHandler("Complete End Location details are required.", 400)
+        );
+      }
+
+      // Check if the end location already exists
+      let existingEndLoc = await locationModel.findOne({
+        name: end_loc.name,
+        lat: end_loc.lat,
+        long: end_loc.long,
+      });
+
+      let endLocId;
+      if (existingEndLoc) {
+        endLocId = existingEndLoc._id;
+      } else {
+        const newEndLoc = await locationModel.create(end_loc);
+        endLocId = newEndLoc._id;
+      }
+
+      updatedData.end_loc = endLocId;
       updatedData.end_milage = end_milage;
       updatedData.end_time = Date.now();
       updatedData.status = "completed";
-      record = { end_loc: loc };
+      record = { end_loc };
       break;
   }
 
